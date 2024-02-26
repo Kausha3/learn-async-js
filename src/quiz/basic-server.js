@@ -1,61 +1,30 @@
-#! /opt/homebrew/bin/node
-const http = require('http');
-const url = require('url');
-
-const hostname = 'localhost';
+const express = require('express');
+const app = express();
 const port = 8000;
 
 const incidents = [
-    {
-        id: "MABOS001",
-        date: "20170617",
-        time: "1437",
-        road_id: "A90",
-        place: "Stonehaven",
-        direction: "north",
-        description: "Broken-down T on north and park station."
+    { id: "MABOS001", date: "20170617", time: "1437", road_id: "A90", place: "Stonehaven", direction: "north", description: "Broken-down vehicle on north and park station." },
+    { id: "MABOS002", date: "20221217", time: "0937", road_id: "A90", place: "Stonehaven", direction: "north", description: "Car in West Village broken down." }
+];
 
-    },
-    {
-        id: "MABOS002",
-        date: "20221217",
-        time: "0937",
-        road_id: "A90",
-        place: "Stonehaven",
-        direction: "north",
-        description: "Car in West Village broken down."
+// Middleware to parse request body
+app.use(express.json());
 
+app.get('/incidents/:id', (req, res) => {
+    const { id } = req.params;
+    // Basic validation for ID format
+    if (!/MABOS00\d+/.test(id)) {
+        return res.status(400).json({ error: 'Invalid incident ID format' });
     }
-]
 
-const server = http.createServer((req, res) => {
-    // Parse the request URL to extract parameters
-    const parsedUrl = url.parse(req.url, true);
-    const { pathname } = parsedUrl;
-
-    // Check if the request is for the specified endpoint
-    if (pathname.startsWith('/incidents/')) {
-        // Extract parameters from the URL
-        const [, , road, location, direction, id] = pathname.split('/');
-        // Check if all parameters are provided
-        if (road && location && direction && id) {
-            // Send response with the extracted parameters
-            res.writeHead(200, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify(incidents.filter((incident) => {
-                return incident.id === `MABOS00${id}`
-            })));
-        }
-        else {
-            res.writeHead(404, { 'Content-Type': 'text/plain' });
-            res.end('Endpoint not found');
-        }
+    const incident = incidents.find(incident => incident.id === id);
+    if (incident) {
+        res.json(incident);
     } else {
-        // If the request is for an unsupported endpoint, send a not found response
-        res.writeHead(404, { 'Content-Type': 'text/plain' });
-        res.end('Endpoint not found');
+        res.status(404).json({ error: 'Incident not found' });
     }
 });
 
-server.listen(port, hostname, () => {
-    console.log(`Server running at http://${hostname}:${port}/`);
-})
+app.listen(port, () => {
+    console.log(`Server listening at http://localhost:${port}`);
+});
