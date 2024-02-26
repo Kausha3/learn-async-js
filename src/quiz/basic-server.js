@@ -1,5 +1,7 @@
-const express = require('express');
-const app = express();
+const http = require('http');
+const url = require('url');
+
+const hostname = 'localhost';
 const port = 8000;
 
 const incidents = [
@@ -7,24 +9,35 @@ const incidents = [
     { id: "MABOS002", date: "20221217", time: "0937", road_id: "A90", place: "Stonehaven", direction: "north", description: "Car in West Village broken down." }
 ];
 
-// Middleware to parse request body
-app.use(express.json());
+const server = http.createServer((req, res) => {
+    const parsedUrl = url.parse(req.url, true);
+    const pathname = parsedUrl.pathname.replace(/\/+$/, ''); // Normalize by removing trailing slashes
 
-app.get('/incidents/:id', (req, res) => {
-    const { id } = req.params;
-    // Basic validation for ID format
-    if (!/MABOS00\d+/.test(id)) {
-        return res.status(400).json({ error: 'Invalid incident ID format' });
-    }
+ 
+    if (pathname.startsWith('/incidents/')) {
+        const segments = pathname.split('/');
+        
+        if (segments.length === 3 && segments[2]) {
+            const incidentId = segments[2];
+            const incident = incidents.find(inc => inc.id === incidentId);
 
-    const incident = incidents.find(incident => incident.id === id);
-    if (incident) {
-        res.json(incident);
+            if (incident) {
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify(incident));
+            } else {
+                res.writeHead(404, { 'Content-Type': 'text/plain' });
+                res.end('Incident not found');
+            }
+        } else {
+            res.writeHead(400, { 'Content-Type': 'text/plain' });
+            res.end('Bad Request: Incorrect incident ID format');
+        }
     } else {
-        res.status(404).json({ error: 'Incident not found' });
+        res.writeHead(404, { 'Content-Type': 'text/plain' });
+        res.end('Endpoint not found');
     }
 });
 
-app.listen(port, () => {
-    console.log(`Server listening at http://localhost:${port}`);
+server.listen(port, hostname, () => {
+    console.log(`Server running at http://${hostname}:${port}/`);
 });
