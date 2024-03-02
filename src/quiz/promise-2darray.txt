@@ -1,1 +1,32 @@
 Explain the code execution based on the order of the messages logged in src/quiz/promise-2darray.txt.
+
+"sum2DArray" is a function that returns a promise, which, when resolved, gives the sum of all elements in a 2D array. The function uses setTimeout to asynchronously calculate the sum, simulating a delay or an asynchronous operation like fetching data from a server.
+
+When "sum2DArray" is called with a 2D array and with a non-array argument, the function's execution and the handling of the promises will follow a certain order, primarily due to JavaScript's event loop and asynchronous execution model.Here's how the code execution proceeds, along with the order of messages logged:
+
+1) sum2DArray(array2D) is called:
+   -> Logs "Sum called ... " immediately as the function begins execution.
+   -> Checks if the input is an array, which it is, so it schedules a setTimeout callback to calculate the sum, but doesn't execute it 
+      immediately.
+   -> Logs "returning from sum" as the next line of code inside the function, indicating the function will now wait for the asynchronous 
+      operation (the setTimeout) to complete.
+
+2) sum2DArray('array2D') is called:
+   -> Logs "Sum called ... " immediately as the function begins execution for the second call.
+   -> Quickly identifies that the input is not an array and immediately rejects the promise.
+   -> Logs "rejecting ... " as it executes the reject function with the error message.
+   -> Logs "returning from sum" indicating the end of the function's execution for this call.
+
+3) JavaScript Event Loop and setTimeout:
+   -> After the call stack is clear, the JavaScript event loop checks the queue and finds the setTimeout callback from the first 
+      sum2DArray(array2D) call.
+   -> The callback is executed, and it calculates the sum of the elements in the 2D array.
+   -> Logs "resolving ... " right before calling the resolve function with the calculated sum.
+
+4) Resolution of Promises:
+   -> The promise from the first call (sum2DArray(array2D)) is resolved with the sum, and the .then() handler is called, logging the 
+      calculated sum with "Sum: ${sum}".
+   -> The promise from the second call (sum2DArray('array2D')) was already rejected, and its .catch() handler logs the error message with 
+      "Error: ${error}".
+
+The asynchronous nature of JavaScript, particularly with setTimeout and promises, allows the main thread to continue executing (logging "returning from sum" and handling the immediate rejection) while the setTimeout callback is scheduled to run later, leading to the observed order of logs and promise resolution/rejection.
